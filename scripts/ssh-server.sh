@@ -51,37 +51,67 @@ else
     echo "  SSH key already exists at ~/.ssh/id_ed25519"
 fi
 
-# Display the public key
-echo ""
-echo "════════════════════════════════════════════════════════════════"
-echo "SSH PUBLIC KEY (copy this to remote machines for SSH access):"
-echo "════════════════════════════════════════════════════════════════"
-echo ""
-cat ~/.ssh/id_ed25519.pub
-echo ""
-echo "════════════════════════════════════════════════════════════════"
-echo ""
+# Save or display SSH information
+if [ -n "$COMPONENT_OUTPUT_DIR" ]; then
+    # Save to files for summary display
+    cat ~/.ssh/id_ed25519.pub > "${COMPONENT_OUTPUT_DIR}/ssh_key.txt"
 
-# Display connection information
-echo "SSH Server Information:"
-if [ -d /run/systemd/system ]; then
-    echo "  Status: $(run_as_root systemctl is-active ssh)"
+    {
+        echo "SSH Server Information:"
+        if [ -d /run/systemd/system ]; then
+            echo "  Status: $(run_as_root systemctl is-active ssh)"
+        else
+            if pgrep -x sshd > /dev/null; then
+                echo "  Status: active"
+            else
+                echo "  Status: inactive"
+            fi
+        fi
+        echo "  Port: 22 (default)"
+        if command -v hostname &> /dev/null; then
+            echo "  Hostname: $(hostname)"
+        fi
+        if command -v ip &> /dev/null; then
+            LOCAL_IP=$(ip addr show | grep "inet " | grep -v 127.0.0.1 | awk '{print $2}' | cut -d/ -f1 | head -n1)
+            echo "  Local IP: $LOCAL_IP"
+        fi
+        echo ""
+        echo "To connect from another machine, use:"
+        echo "  ssh $(whoami)@<this-machine-ip>"
+    } > "${COMPONENT_OUTPUT_DIR}/ssh_info.txt"
 else
-    if pgrep -x sshd > /dev/null; then
-        echo "  Status: active"
+    # Display directly (legacy mode)
+    echo ""
+    echo "════════════════════════════════════════════════════════════════"
+    echo "SSH PUBLIC KEY (copy this to remote machines for SSH access):"
+    echo "════════════════════════════════════════════════════════════════"
+    echo ""
+    cat ~/.ssh/id_ed25519.pub
+    echo ""
+    echo "════════════════════════════════════════════════════════════════"
+    echo ""
+
+    # Display connection information
+    echo "SSH Server Information:"
+    if [ -d /run/systemd/system ]; then
+        echo "  Status: $(run_as_root systemctl is-active ssh)"
     else
-        echo "  Status: inactive"
+        if pgrep -x sshd > /dev/null; then
+            echo "  Status: active"
+        else
+            echo "  Status: inactive"
+        fi
     fi
+    echo "  Port: 22 (default)"
+    if command -v hostname &> /dev/null; then
+        echo "  Hostname: $(hostname)"
+    fi
+    if command -v ip &> /dev/null; then
+        LOCAL_IP=$(ip addr show | grep "inet " | grep -v 127.0.0.1 | awk '{print $2}' | cut -d/ -f1 | head -n1)
+        echo "  Local IP: $LOCAL_IP"
+    fi
+    echo ""
+    echo "To connect from another machine, use:"
+    echo "  ssh $(whoami)@<this-machine-ip>"
+    echo ""
 fi
-echo "  Port: 22 (default)"
-if command -v hostname &> /dev/null; then
-    echo "  Hostname: $(hostname)"
-fi
-if command -v ip &> /dev/null; then
-    LOCAL_IP=$(ip addr show | grep "inet " | grep -v 127.0.0.1 | awk '{print $2}' | cut -d/ -f1 | head -n1)
-    echo "  Local IP: $LOCAL_IP"
-fi
-echo ""
-echo "To connect from another machine, use:"
-echo "  ssh $(whoami)@<this-machine-ip>"
-echo ""

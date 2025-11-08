@@ -280,46 +280,144 @@ main() {
         run_as_root apt update
     fi
 
+    # Arrays to track installation results
+    declare -A component_names=(
+        [1]="Basic Packages"
+        [2]="Git Configuration"
+        [3]="TMUX Configuration"
+        [4]="Neofetch (Hyperion)"
+        [5]="SSH Server"
+        [6]="Docker"
+        [7]="Python"
+        [8]="VS Code Server"
+    )
+    declare -A component_status
+
+    # Temporary directory for component outputs
+    COMPONENT_OUTPUT_DIR=$(mktemp -d)
+
     # Execute selected components
     for component in $SELECTED_COMPONENTS; do
         case $component in
             1)
                 log_info "Installing basic packages..."
-                bash "${SCRIPTS_DIR}/packages.sh"
+                if bash "${SCRIPTS_DIR}/packages.sh" > "${COMPONENT_OUTPUT_DIR}/1.log" 2>&1; then
+                    component_status[$component]="SUCCESS"
+                else
+                    component_status[$component]="FAILED"
+                fi
                 ;;
             2)
                 log_info "Configuring Git..."
-                bash "${SCRIPTS_DIR}/git-config.sh"
+                if bash "${SCRIPTS_DIR}/git-config.sh" > "${COMPONENT_OUTPUT_DIR}/2.log" 2>&1; then
+                    component_status[$component]="SUCCESS"
+                else
+                    component_status[$component]="FAILED"
+                fi
                 ;;
             3)
                 log_info "Setting up TMUX configuration..."
-                bash "${SCRIPTS_DIR}/tmux.sh"
+                if bash "${SCRIPTS_DIR}/tmux.sh" > "${COMPONENT_OUTPUT_DIR}/3.log" 2>&1; then
+                    component_status[$component]="SUCCESS"
+                else
+                    component_status[$component]="FAILED"
+                fi
                 ;;
             4)
                 log_info "Installing Neofetch configuration..."
-                bash "${SCRIPTS_DIR}/neofetch.sh"
+                if bash "${SCRIPTS_DIR}/neofetch.sh" > "${COMPONENT_OUTPUT_DIR}/4.log" 2>&1; then
+                    component_status[$component]="SUCCESS"
+                else
+                    component_status[$component]="FAILED"
+                fi
                 ;;
             5)
                 log_info "Setting up SSH server..."
-                bash "${SCRIPTS_DIR}/ssh-server.sh"
+                if COMPONENT_OUTPUT_DIR="${COMPONENT_OUTPUT_DIR}" bash "${SCRIPTS_DIR}/ssh-server.sh" > "${COMPONENT_OUTPUT_DIR}/5.log" 2>&1; then
+                    component_status[$component]="SUCCESS"
+                else
+                    component_status[$component]="FAILED"
+                fi
                 ;;
             6)
                 log_info "Installing Docker..."
-                bash "${SCRIPTS_DIR}/docker.sh"
+                if bash "${SCRIPTS_DIR}/docker.sh" > "${COMPONENT_OUTPUT_DIR}/6.log" 2>&1; then
+                    component_status[$component]="SUCCESS"
+                else
+                    component_status[$component]="FAILED"
+                fi
                 ;;
             7)
                 log_info "Setting up Python..."
-                bash "${SCRIPTS_DIR}/python.sh"
+                if bash "${SCRIPTS_DIR}/python.sh" > "${COMPONENT_OUTPUT_DIR}/7.log" 2>&1; then
+                    component_status[$component]="SUCCESS"
+                else
+                    component_status[$component]="FAILED"
+                fi
                 ;;
             8)
                 log_info "Installing VS Code Server..."
-                bash "${SCRIPTS_DIR}/vscode-server.sh"
+                if bash "${SCRIPTS_DIR}/vscode-server.sh" > "${COMPONENT_OUTPUT_DIR}/8.log" 2>&1; then
+                    component_status[$component]="SUCCESS"
+                else
+                    component_status[$component]="FAILED"
+                fi
                 ;;
         esac
-        echo ""
     done
 
-    log_success "Installation complete!"
+    echo ""
+    echo "╔════════════════════════════════════════════════════════╗"
+    echo "║                 INSTALLATION SUMMARY                   ║"
+    echo "╚════════════════════════════════════════════════════════╝"
+    echo ""
+
+    # Display component results
+    for component in $SELECTED_COMPONENTS; do
+        if [[ "${component_status[$component]}" == "SUCCESS" ]]; then
+            echo -e "  ${GREEN}✓${NC} ${component_names[$component]}"
+        else
+            echo -e "  ${RED}✗${NC} ${component_names[$component]}"
+        fi
+    done
+
+    echo ""
+
+    # Display SSH information if SSH was installed successfully
+    if [[ $SELECTED_COMPONENTS =~ 5 ]] && [[ "${component_status[5]}" == "SUCCESS" ]]; then
+        if [ -f "${COMPONENT_OUTPUT_DIR}/ssh_key.txt" ]; then
+            echo "════════════════════════════════════════════════════════════════"
+            echo "SSH PUBLIC KEY (copy this to remote machines for SSH access):"
+            echo "════════════════════════════════════════════════════════════════"
+            echo ""
+            cat "${COMPONENT_OUTPUT_DIR}/ssh_key.txt"
+            echo ""
+            echo "════════════════════════════════════════════════════════════════"
+            echo ""
+        fi
+
+        if [ -f "${COMPONENT_OUTPUT_DIR}/ssh_info.txt" ]; then
+            cat "${COMPONENT_OUTPUT_DIR}/ssh_info.txt"
+            echo ""
+        fi
+    fi
+
+    # Cleanup component output directory
+    rm -rf "${COMPONENT_OUTPUT_DIR}"
+
+    # Overall status
+    failed_count=0
+    for component in $SELECTED_COMPONENTS; do
+        if [[ "${component_status[$component]}" == "FAILED" ]]; then
+            ((failed_count++))
+        fi
+    done
+
+    if [ $failed_count -eq 0 ]; then
+        log_success "All components installed successfully!"
+    else
+        log_warn "$failed_count component(s) failed to install"
+    fi
     echo ""
     log_info "You may need to log out and back in for some changes to take effect."
 }
