@@ -150,7 +150,7 @@ Edit color variables at top of `install.sh`:
 
 The one-command installation uses GitHub raw URLs:
 ```
-https://raw.githubusercontent.com/AndrewHulse/ubuntu-setup/main/install.sh
+https://raw.githubusercontent.com/AndrewHulse/linux-startup-script/main/install.sh
 ```
 
 **Critical**: Repository must be **public** for this to work without authentication. Keep sensitive information out of this repository.

@@ -14,20 +14,20 @@ Automated setup script for fresh Ubuntu installations with interactive component
 ### One-Command Installation
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/AndrewHulse/ubuntu-setup/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/AndrewHulse/linux-startup-script/main/install.sh | bash
 ```
 
 Or using wget:
 
 ```bash
-wget -qO- https://raw.githubusercontent.com/AndrewHulse/ubuntu-setup/main/install.sh | bash
+wget -qO- https://raw.githubusercontent.com/AndrewHulse/linux-startup-script/main/install.sh | bash
 ```
 
 ### Manual Installation
 
 ```bash
-git clone https://github.com/AndrewHulse/ubuntu-setup.git
-cd ubuntu-setup
+git clone https://github.com/AndrewHulse/linux-startup-script.git
+cd linux-startup-script
 chmod +x install.sh
 ./install.sh
 ```
@@ -90,7 +90,7 @@ Installs code-server (VS Code in the browser):
 ## Directory Structure
 
 ```
-ubuntu-setup/
+linux-startup-script/
 ├── install.sh              # Main installation script
 ├── scripts/
 │   ├── packages.sh         # Basic packages
@@ -143,7 +143,7 @@ Access at http://localhost:8080 using the password displayed after installation.
 To update the setup scripts:
 
 ```bash
-cd ubuntu-setup
+cd linux-startup-script
 git pull
 ./install.sh
 ```
