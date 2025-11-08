@@ -383,6 +383,27 @@ main() {
 
     echo ""
 
+    # Display error details for failed components
+    failed_count=0
+    for component in $SELECTED_COMPONENTS; do
+        if [[ "${component_status[$component]}" == "FAILED" ]]; then
+            ((failed_count++))
+            echo "────────────────────────────────────────────────────────────────"
+            echo -e "${RED}ERROR:${NC} ${component_names[$component]} failed"
+            echo "────────────────────────────────────────────────────────────────"
+            if [ -f "${COMPONENT_OUTPUT_DIR}/${component}.log" ]; then
+                echo "Last 15 lines of output:"
+                echo ""
+                tail -n 15 "${COMPONENT_OUTPUT_DIR}/${component}.log"
+            fi
+            echo ""
+        fi
+    done
+
+    if [ $failed_count -gt 0 ]; then
+        echo ""
+    fi
+
     # Display SSH information if SSH was installed successfully
     if [[ $SELECTED_COMPONENTS =~ 5 ]] && [[ "${component_status[5]}" == "SUCCESS" ]]; then
         if [ -f "${COMPONENT_OUTPUT_DIR}/ssh_key.txt" ]; then
@@ -406,13 +427,6 @@ main() {
     rm -rf "${COMPONENT_OUTPUT_DIR}"
 
     # Overall status
-    failed_count=0
-    for component in $SELECTED_COMPONENTS; do
-        if [[ "${component_status[$component]}" == "FAILED" ]]; then
-            ((failed_count++))
-        fi
-    done
-
     if [ $failed_count -eq 0 ]; then
         log_success "All components installed successfully!"
     else
