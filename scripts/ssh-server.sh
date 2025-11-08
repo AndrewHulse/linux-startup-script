@@ -10,7 +10,7 @@ run_as_root() {
     if [ "$EUID" -eq 0 ]; then
         "$@"
     elif command -v sudo &> /dev/null; then
-        run_as_root "$@"
+        sudo "$@"
     else
         "$@"
     fi
@@ -21,11 +21,25 @@ echo "Setting up SSH server..."
 # Install OpenSSH server
 run_as_root apt install -y openssh-server
 
-# Start and enable SSH service
-run_as_root systemctl start ssh
-run_as_root systemctl enable ssh
+# Start SSH service - detect systemd vs non-systemd environments
+if [ -d /run/systemd/system ]; then
+    # systemd is available
+    run_as_root systemctl start ssh
+    run_as_root systemctl enable ssh
+    echo "✓ SSH server installed and started (systemd)"
+else
+    # Non-systemd environment (Docker, etc.)
+    # Create run directory if it doesn't exist
+    run_as_root mkdir -p /run/sshd
 
-echo "✓ SSH server installed and started"
+    # Start SSH daemon directly
+    if command -v service &> /dev/null; then
+        run_as_root service ssh start 2>/dev/null || run_as_root /usr/sbin/sshd
+    else
+        run_as_root /usr/sbin/sshd
+    fi
+    echo "✓ SSH server installed and started (manual)"
+fi
 
 # Generate SSH key if it doesn't exist
 if [ ! -f ~/.ssh/id_ed25519 ]; then
@@ -50,7 +64,15 @@ echo ""
 
 # Display connection information
 echo "SSH Server Information:"
-echo "  Status: $(run_as_root systemctl is-active ssh)"
+if [ -d /run/systemd/system ]; then
+    echo "  Status: $(run_as_root systemctl is-active ssh)"
+else
+    if pgrep -x sshd > /dev/null; then
+        echo "  Status: active"
+    else
+        echo "  Status: inactive"
+    fi
+fi
 echo "  Port: 22 (default)"
 if command -v hostname &> /dev/null; then
     echo "  Hostname: $(hostname)"
