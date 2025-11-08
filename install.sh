@@ -7,6 +7,48 @@
 
 set -e  # Exit on error
 
+# Parse command line arguments
+NON_INTERACTIVE=false
+INSTALL_ALL=false
+
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --all)
+            NON_INTERACTIVE=true
+            INSTALL_ALL=true
+            shift
+            ;;
+        --non-interactive)
+            NON_INTERACTIVE=true
+            shift
+            ;;
+        --help|-h)
+            echo "Usage: $0 [OPTIONS]"
+            echo ""
+            echo "Options:"
+            echo "  --all              Install all components without prompting"
+            echo "  --non-interactive  Skip interactive menu (install default components)"
+            echo "  --help, -h         Show this help message"
+            echo ""
+            echo "Components installed with --all:"
+            echo "  1. Basic Packages"
+            echo "  2. Git Configuration"
+            echo "  3. TMUX Configuration"
+            echo "  4. Neofetch (Hyperion)"
+            echo "  5. SSH Server"
+            echo "  6. Docker"
+            echo "  7. Python"
+            echo "  8. VS Code Server"
+            exit 0
+            ;;
+        *)
+            echo "Unknown option: $1"
+            echo "Use --help for usage information"
+            exit 1
+            ;;
+    esac
+done
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -154,11 +196,21 @@ main() {
     show_banner
     check_ubuntu
 
-    # Show interactive menu
-    show_menu
-
-    clear
-    show_banner
+    # Handle non-interactive mode
+    if [[ "$NON_INTERACTIVE" == "true" ]]; then
+        if [[ "$INSTALL_ALL" == "true" ]]; then
+            log_info "Running in non-interactive mode: Installing ALL components"
+            SELECTED_COMPONENTS="1 2 3 4 5 6 7 8"
+        else
+            log_info "Running in non-interactive mode: Installing default components"
+            SELECTED_COMPONENTS="1 2 3 4"  # Basic packages, Git, TMUX, Neofetch
+        fi
+    else
+        # Show interactive menu
+        show_menu
+        clear
+        show_banner
+    fi
 
     log_info "Starting installation with selected components..."
     echo ""

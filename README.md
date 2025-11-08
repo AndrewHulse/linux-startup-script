@@ -11,7 +11,9 @@ Automated setup script for fresh Ubuntu installations with interactive component
 
 ## Quick Start
 
-### One-Command Installation
+### One-Command Installation (Interactive)
+
+For interactive component selection:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/AndrewHulse/linux-startup-script/main/install.sh | bash
@@ -23,13 +25,33 @@ Or using wget:
 wget -qO- https://raw.githubusercontent.com/AndrewHulse/linux-startup-script/main/install.sh | bash
 ```
 
+### One-Command Installation (Non-Interactive - All Components)
+
+To install everything without prompts:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/AndrewHulse/linux-startup-script/main/install.sh | bash -s -- --all
+```
+
+This installs: Basic Packages, Git, TMUX, Neofetch, SSH Server, Docker, Python, and VS Code Server.
+
+### One-Command Installation (Non-Interactive - Default Only)
+
+To install just the essentials (Packages, Git, TMUX, Neofetch):
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/AndrewHulse/linux-startup-script/main/install.sh | bash -s -- --non-interactive
+```
+
 ### Manual Installation
 
 ```bash
 git clone https://github.com/AndrewHulse/linux-startup-script.git
 cd linux-startup-script
 chmod +x install.sh
-./install.sh
+./install.sh              # Interactive mode
+./install.sh --all        # Install everything
+./install.sh --help       # Show all options
 ```
 
 ## Components
