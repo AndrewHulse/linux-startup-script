@@ -60,6 +60,40 @@ NC='\033[0m' # No Color
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SCRIPTS_DIR="${SCRIPT_DIR}/scripts"
 
+# If scripts directory doesn't exist (e.g., piped via curl), download the repo
+CLEANUP_REPO=false
+if [ ! -d "$SCRIPTS_DIR" ]; then
+    log_info() { echo -e "\033[0;34m[INFO]\033[0m $1"; }
+    log_info "Scripts directory not found. Downloading from GitHub..."
+    TEMP_REPO=$(mktemp -d)
+    CLEANUP_REPO=true
+
+    # Clone the repository
+    if command -v git &> /dev/null; then
+        git clone --quiet https://github.com/AndrewHulse/linux-startup-script.git "$TEMP_REPO" 2>/dev/null
+    else
+        # If git isn't available, install it first
+        if [ "$EUID" -eq 0 ]; then
+            apt update -qq && apt install -y git -qq
+        else
+            sudo apt update -qq && sudo apt install -y git -qq
+        fi
+        git clone --quiet https://github.com/AndrewHulse/linux-startup-script.git "$TEMP_REPO" 2>/dev/null
+    fi
+
+    SCRIPT_DIR="$TEMP_REPO"
+    SCRIPTS_DIR="$TEMP_REPO/scripts"
+    log_info "Repository downloaded to temporary directory"
+fi
+
+# Cleanup function
+cleanup() {
+    if [ "$CLEANUP_REPO" = true ] && [ -n "$TEMP_REPO" ] && [ -d "$TEMP_REPO" ]; then
+        rm -rf "$TEMP_REPO"
+    fi
+}
+trap cleanup EXIT
+
 # Detect if we're running as root
 IS_ROOT=false
 if [ "$EUID" -eq 0 ]; then
