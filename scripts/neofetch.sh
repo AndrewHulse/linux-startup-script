@@ -5,16 +5,27 @@
 
 set -e
 
+# Sudo wrapper
+run_as_root() {
+    if [ "$EUID" -eq 0 ]; then
+        "$@"
+    elif command -v sudo &> /dev/null; then
+        run_as_root "$@"
+    else
+        "$@"
+    fi
+}
+
 echo "Installing Neofetch configuration..."
 
 # Install neofetch if not already installed
 if ! command -v neofetch &> /dev/null; then
-    sudo apt install -y neofetch
+    run_as_root apt install -y neofetch
 fi
 
 # Install Python3 for logo conversion script
 if ! command -v python3 &> /dev/null; then
-    sudo apt install -y python3
+    run_as_root apt install -y python3
 fi
 
 # Create config directory

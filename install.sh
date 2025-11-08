@@ -60,6 +60,24 @@ NC='\033[0m' # No Color
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SCRIPTS_DIR="${SCRIPT_DIR}/scripts"
 
+# Detect if we're running as root
+IS_ROOT=false
+if [ "$EUID" -eq 0 ]; then
+    IS_ROOT=true
+fi
+
+# Sudo wrapper - use sudo only if not root and sudo exists
+run_as_root() {
+    if [ "$IS_ROOT" = true ]; then
+        "$@"
+    elif command -v sudo &> /dev/null; then
+        sudo "$@"
+    else
+        log_error "This script requires root privileges. Please run as root or install sudo."
+        exit 1
+    fi
+}
+
 # Logging
 log_info() {
     echo -e "${BLUE}[INFO]${NC} $1"
@@ -196,6 +214,13 @@ main() {
     show_banner
     check_ubuntu
 
+    # Auto-detect if we're in a non-interactive environment (piped via curl/wget)
+    if [[ ! -t 0 ]] && [[ "$NON_INTERACTIVE" == "false" ]]; then
+        log_warn "No terminal detected (piped input). Switching to non-interactive mode with defaults."
+        log_warn "Use '--all' flag to install all components: curl ... | bash -s -- --all"
+        NON_INTERACTIVE=true
+    fi
+
     # Handle non-interactive mode
     if [[ "$NON_INTERACTIVE" == "true" ]]; then
         if [[ "$INSTALL_ALL" == "true" ]]; then
@@ -218,7 +243,7 @@ main() {
     # Update package list first if any packages will be installed
     if [[ $SELECTED_COMPONENTS =~ [1-8] ]]; then
         log_info "Updating package lists..."
-        sudo apt update
+        run_as_root apt update
     fi
 
     # Execute selected components

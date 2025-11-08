@@ -5,6 +5,17 @@
 
 set -e
 
+# Sudo wrapper - use sudo only if not root and sudo exists
+run_as_root() {
+    if [ "$EUID" -eq 0 ]; then
+        "$@"
+    elif command -v sudo &> /dev/null; then
+        sudo "$@"
+    else
+        "$@"  # Try without sudo as fallback
+    fi
+}
+
 echo "Installing basic packages..."
 
 PACKAGES=(
@@ -25,6 +36,6 @@ PACKAGES=(
     lsb-release
 )
 
-sudo apt install -y "${PACKAGES[@]}"
+run_as_root apt install -y "${PACKAGES[@]}"
 
 echo "✓ Basic packages installed successfully"

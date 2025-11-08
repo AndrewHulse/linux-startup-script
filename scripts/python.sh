@@ -5,10 +5,21 @@
 
 set -e
 
+# Sudo wrapper
+run_as_root() {
+    if [ "$EUID" -eq 0 ]; then
+        "$@"
+    elif command -v sudo &> /dev/null; then
+        run_as_root "$@"
+    else
+        "$@"
+    fi
+}
+
 echo "Installing Python and development tools..."
 
 # Install Python3 and related packages
-sudo apt install -y \
+run_as_root apt install -y \
     python3 \
     python3-pip \
     python3-venv \

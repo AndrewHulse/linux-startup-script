@@ -5,31 +5,42 @@
 
 set -e
 
+# Sudo wrapper
+run_as_root() {
+    if [ "$EUID" -eq 0 ]; then
+        "$@"
+    elif command -v sudo &> /dev/null; then
+        run_as_root "$@"
+    else
+        "$@"
+    fi
+}
+
 echo "Installing Docker..."
 
 # Remove old versions if they exist
-sudo apt remove -y docker docker-engine docker.io containerd runc 2>/dev/null || true
+run_as_root apt remove -y docker docker-engine docker.io containerd runc 2>/dev/null || true
 
 # Install prerequisites (already done in packages.sh, but ensuring they exist)
-sudo apt install -y ca-certificates curl gnupg lsb-release
+run_as_root apt install -y ca-certificates curl gnupg lsb-release
 
 # Add Docker's official GPG key
-sudo mkdir -p /etc/apt/keyrings
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+run_as_root mkdir -p /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | run_as_root gpg --dearmor -o /etc/apt/keyrings/docker.gpg
 
 # Set up the repository
 echo \
   "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
-  $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+  $(lsb_release -cs) stable" | run_as_root tee /etc/apt/sources.list.d/docker.list > /dev/null
 
 # Update package index
-sudo apt update
+run_as_root apt update
 
 # Install Docker Engine
-sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+run_as_root apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 
 # Add current user to docker group
-sudo usermod -aG docker $USER
+run_as_root usermod -aG docker $USER
 
 echo "✓ Docker installed successfully"
 echo ""

@@ -5,14 +5,25 @@
 
 set -e
 
+# Sudo wrapper
+run_as_root() {
+    if [ "$EUID" -eq 0 ]; then
+        "$@"
+    elif command -v sudo &> /dev/null; then
+        run_as_root "$@"
+    else
+        "$@"
+    fi
+}
+
 echo "Setting up SSH server..."
 
 # Install OpenSSH server
-sudo apt install -y openssh-server
+run_as_root apt install -y openssh-server
 
 # Start and enable SSH service
-sudo systemctl start ssh
-sudo systemctl enable ssh
+run_as_root systemctl start ssh
+run_as_root systemctl enable ssh
 
 echo "✓ SSH server installed and started"
 
@@ -39,7 +50,7 @@ echo ""
 
 # Display connection information
 echo "SSH Server Information:"
-echo "  Status: $(sudo systemctl is-active ssh)"
+echo "  Status: $(run_as_root systemctl is-active ssh)"
 echo "  Port: 22 (default)"
 if command -v hostname &> /dev/null; then
     echo "  Hostname: $(hostname)"
